@@ -1,22 +1,22 @@
 #  iotdbs.sh
-#  
+#
 #  Copyright 2014 arcanexil <lucas.ranc@gmail.com>
-#  
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#  
+#
 
 # Changelog :
 #
@@ -42,10 +42,10 @@ iotdbs(){
 			i=$(($i+1))
 			echo $i
 		done
-		
+
 		if [[ $(more ./$RSS | grep xml | wc -l) ]]; then
 			$(more ./$RSS | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head > img.list)
-			
+
 			# If pictures already exists, don't need to waste the bandwidth
 			if [[ ! -n $(ls $HOME/.wallpapers/*.jpg) ]]; then
 				$(wget -q -i img.list -P $HOME/.wallpapers)
@@ -70,8 +70,7 @@ iotdbs(){
 			echo "Please read the log file, if everything is ok : restart the script."
 			echo -e "You will find the log there :" "\e[104;1m$(ls $LOG)\e[0m"
 		fi
-		
-	
+
 }
 
 #############
@@ -109,7 +108,7 @@ fi
 # If so, we can load the RSS url : obviouly RSS implementation can change at any time.
 if [[ "$3" == '-rss' ]]
 then
-	[ -z "$4" ] 
+	[ -z "$4" ]
 	if [[ $4 =~ ^http:// ]]
 	then
 		RSS="$4"
@@ -120,7 +119,7 @@ fi
 # If so, we can load the RSS url : obviouly RSS implementation can change at any time.
 if [[ "$5" == '-t' ]]
 then
-	[ -z "$6" ] 
+	[ -z "$6" ]
 	if [[ $6 == *[[:digit:]]* ]]
 	then
 		TIME="$6"
@@ -138,7 +137,7 @@ if [[ -z "$RSS" ]]
 fi
 if [[ -z "$TIME" ]]
 	then
-		TIME=1
+		TIME=30
 fi
 # User asking for help
 if [[ "$1" == '-h' ]]
