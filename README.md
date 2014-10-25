@@ -47,8 +47,8 @@ If you want to get in touch with us, to ask/discuss/.. things, please send to th
 
 ## Basic workflow ##
 
-You would usually invoke iotdbs like this:
-iotdbs -s <normal/large> -rss <url> -t <time>
+You would usually invoke iotdbs like this:  
+iotdbs -s <normal/large> -rss <url> -t <time>  
 Type `iotdbs -h` to see more details.
 
 
