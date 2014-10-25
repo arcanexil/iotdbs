@@ -43,8 +43,8 @@ iotdbs(){
 			echo $i
 		done
 
-		if [[ $(more ./$RSS | grep xml | wc -l) ]]; then
-			$(more ./$RSS | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head > img.list)
+		if [[ $(cat ./$RSS | grep xml | wc -l) ]]; then
+			$(cat ./$RSS | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head > img.list)
 
 			# If pictures already exists, don't need to waste the bandwidth
 			if [[ ! -n $(ls $HOME/.wallpapers/*.jpg) ]]; then

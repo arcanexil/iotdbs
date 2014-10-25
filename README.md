@@ -19,24 +19,24 @@ Optionally:
 
 ## Goals ##
 
-The goal of this project is to:
-1) provide reasonable clean, DRY, modular and maintainable code 
-2) provide complete, easily-reusable management, etc
-3) provide some sensible default methods 
+The goal of this project is to:  
+1) provide reasonable clean, DRY, modular and maintainable code  
+2) provide complete, easily-reusable management, etc  
+3) provide some sensible default methods  
 
 The goal of this project is not (yet) to:
 
 
 ## Branches ##
--> master: "stable" tree, infrequent updates
--> develop: unstable development tree, which may get rewritten at some points,
-   only when things have settled down, gets pushed to master
--> optionally: more topic branches which are rewriteable and which come and go
+-> master: "stable" tree, infrequent updates  
+-> develop: unstable development tree, which may get rewritten at some points,  
+   only when things have settled down, gets pushed to master  
+-> optionally: more topic branches which are rewriteable and which come and go  
 
 ## A bit of history ##
 TODO
 
-## Bug/feature request tracking.  Getting in touch ## 
+## Bug/feature request tracking. Getting in touch ## 
 - bug tracker:  hm do we need that ?
 - mailing list: 
 
