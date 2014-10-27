@@ -34,30 +34,31 @@
 #####################
 iotdbs(){
 	echo "Processing step 2 : Get the content..."
-		$(wget -q $RSS_URL)
+		wget -q $RSS_URL
 		i=0
-		while [[ ! $(head -1 ./$RSS | grep xml | wc -l) && $i<=5 ]]; do
+		while [[ ! $(head -1 ./$RSS | grep xml | wc -l)  ]] && [ $i -lt 10 ]; do
 			rm ./$RSS
-			$(wget -q $RSS_URL)
-			i=$(($i+1))
-			echo $i
+			sleep 1
+			wget -q $RSS_URL
+			let i=i+1
+			echo $i 
 		done
 
-		if [[ $(more ./$RSS | grep xml | wc -l) ]]; then
-			$(more ./$RSS | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head > img.list)
+		if [[ $(cat ./$RSS | grep xml | wc -l) ]]; then
+			$(cat ./$RSS | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head > img.list)
 
 			# If pictures already exists, don't need to waste the bandwidth
-			if [[ ! -n $(ls $HOME/.wallpapers/*.jpg) ]]; then
-				$(wget -q -i img.list -P $HOME/.wallpapers)
+			if [ $(ls -A $HOME/.wallpapers/ | wc -l) -lt 1 ]; then
+				wget -q -i img.list -P $HOME/.wallpapers
 			else
-				rm $HOME/.wallpapers/*.jpg.* 2> /dev/null
+				rm $HOME/.wallpapers/{*.jpg.*,*.jpeg.*}
 			fi
 			# The directory already exists ?
 			mkdir -p $HOME/.wallpapers
 
 			rm ./$RSS
 			rm img.list
-			if [[ -n $(ls $HOME/.wallpapers/*.jpg) ]]; then
+			if [ $(ls -A $HOME/.wallpapers/ | wc -l ) -gt 1 ]; then
 				feh --bg-scale --randomize $HOME/.wallpapers/
 				echo "Done step 2"
 				rm $RUN
@@ -65,8 +66,8 @@ iotdbs(){
 				echo "Step 2 failed. Can't find any pictures in the $HOME/.wallpapers/ folder."
 			fi
 		else
-			echo -e "\n --->" $(date) "\n" "\e[41;1mStep 2 failed. The RSS file can't be read. The script tried 5 times.\e[0m"
-			echo "Step 2 failed. The RSS file can't be read. The script tried 5 times."
+			echo -e "\n --->" $(date) "\n" "\e[41;1mStep 2 failed. The RSS file can't be read. The script tried 10 times.\e[0m\n" >> $LOG
+			echo -e "\e[41;1mStep 2 failed.\e[0m The RSS file can't be read. The script tried 10 times."
 			echo "Please read the log file, if everything is ok : restart the script."
 			echo -e "You will find the log there :" "\e[104;1m$(ls $LOG)\e[0m"
 		fi
@@ -78,12 +79,14 @@ iotdbs(){
 #############
 auto(){
 	counter=0
-	while [[ -n $(ls $HOME/.wallpapers/*.jpg) ]]; do
-		feh --bg-scale --randomize $HOME/.wallpapers/
+	while [ $(ls -A $HOME/.wallpapers/ | wc -l ) -gt 1 ]; do
 		sleep "$TIME"m
-		counter=$(($counter+1))
-		if [[ $counter==24 ]]; then
-			rm -rf $HOME/.wallpapers/
+		feh --bg-scale --randomize $HOME/.wallpapers/
+		let counter=counter+1
+		if [ $counter -gt 24 ]; then
+			# rm -rf $HOME/.wallpapers/
+			echo "The script has loaded "$counter" times images. Let's some new pictures"
+			echo -e "\n --->" $(date) "\n" "\e[32;1mThe script has loaded "$counter" times images. Let's some new pictures" >> $LOG
 			previous
 		fi
 	done
@@ -91,44 +94,36 @@ auto(){
 ####################
 # Looking for args #
 ####################
-# Check if the "first" args is -s <size>.
-# If so, we can load the size.
-if [[ "$1" == '-s' ]]
-then
-	[ -z "$2" ] 
-	if [[ $2 == "normal" ]]
-	then
-		SIZE="i"
-	elif [[ $2 == "large" ]]
-	then
-		SIZE="lg_i"
-	fi
-fi
-# Check if the "second" args is -rss <RSS url>.
-# If so, we can load the RSS url : obviouly RSS implementation can change at any time.
-if [[ "$3" == '-rss' ]]
-then
-	[ -z "$4" ]
-	if [[ $4 =~ ^http:// ]]
-	then
-		RSS="$4"
-	fi
-fi
-
-# Check if the "third" args is -t <time> in minutes.
-# If so, we can load the RSS url : obviouly RSS implementation can change at any time.
-if [[ "$5" == '-t' ]]
-then
-	[ -z "$6" ]
-	if [[ $6 == *[[:digit:]]* ]]
-	then
-		TIME="$6"
-	fi
-fi
-# If no rss and size given, default args will be loaded
+prefix=
+key=
+value=
+for arguments in "$@"
+do
+  case "${prefix}${arguments}" in
+    -s=*|--size=*)  key="-s";     value="${arguments#*=}";; 
+    -rss=*|--rss_url=*)      key="-rss";    value="${arguments#*=}";;
+    -t=*|--time=*)    key="-t";     value="${arguments#*=}";;
+	-h|--help) key="-h";;
+    *)   value=$arguments;;
+  esac
+  case $key in
+    -s) if [[ ${value} == "normal" ]]; then
+    	SIZE=i
+    elif [[ ${value} == "large" ]]; then
+    		SIZE=lg_i
+    fi;
+    prefix=""; key="";SIZE_VALUE="${value}" ;;
+    -rss) RSS_URL="${value}";          prefix=""; key="";;
+    -t)  TIME="${value}";           prefix=""; key="";;
+	-h)  SHOW_HELP=1;           prefix=""; key="";;
+    *)   prefix="${arguments}=";;
+  esac
+done 
+# If nothing was given, default args will be loaded
 if [[ -z "$SIZE" ]]
 	then
 		SIZE=lg_i
+		SIZE_VALUE=large
 fi
 if [[ -z "$RSS" ]]
 	then
@@ -140,8 +135,7 @@ if [[ -z "$TIME" ]]
 		TIME=30
 fi
 # User asking for help
-if [[ "$1" == '-h' ]]
-then
+show_Help(){
 	echo -e "\nUtilisation :\n"
 	echo -e "	iotdbs -s <\e[33mnormal/large\e[0m> -rss <\e[34murl\e[0m>"
 	echo
@@ -151,7 +145,7 @@ then
 	echo -e " 	'\e[33mlarge\e[0m' is for pictures a bit heavier >2Mo"
 	echo -e " -rss 	Add your own <\e[34mRSS url\e[0m>. Default argument is the NASA's image of the day RSS url"
 	echo " -h 	Show this message"
-fi
+}
 ############################################################################
 # Just in case, let's insure the conditions are good to execute the script #
 ############################################################################
@@ -165,6 +159,7 @@ RUN_CHECKED=
 DISPLAY_CHECKED=
 NETWORK_ALIVE=
 NETWORK_CHECKED=
+SHOW_HELP=
 
 # First of all, let's check if the script is currently running and the script folder exists
 $(mkdir -p $FOLDER)
@@ -176,6 +171,7 @@ if [[ ! -e $RUN ]]
 		echo > $RUN
 		echo "#################################################" > $LOG
 		echo -e "\n --->" $(date) "\n" "\e[32;1mLaunching the script ...\e[0m" >> $LOG
+		echo -e "\n --->" $(date) "\n" "time is : \e[1m" $TIME "\e[0m, size is : \e[1m" $SIZE_VALUE "\e[0mand rss_url is : \e[1m" $RSS_URL "\e[0m" >> $LOG
 		echo -e "\n --->" $(date) "\n" "\e[32;1mThe script isn't running somewhere else\e[0m" >> $LOG
 	else # erf, script already running
 		RUN_CHECKED=0
@@ -196,7 +192,7 @@ fi
 if [[ $NETWORK_ALIVE == "" ]]
 	then
     	NETWORK_ALIVE=$(ping -c1 google.com 2>&1 | grep unknown)
-    	$(sleep 5)
+    	$(sleep 1)
 fi
 
 if [[ "$NETWORK_ALIVE" == ""  ]] # If the process succeed all the steps, the script can start
@@ -227,11 +223,28 @@ fi
 ######################################
 # Load each steps in the right order #
 ######################################
-if [[ ! "$1" == '-h' ]]
-	then
-		echo "Processing step 1 : Checking environement..."
-		previous
-		auto
+# if [[ ! $SHOW_HELP == 1 ]]
+# 	then
+# 		echo "Processing step 1 : Checking environement..."
+# 		previous
+# 		auto
+# fi
+echo "--"
+echo "In order to apply what you want."
+echo "The script has taken the followings arguments :"
+echo -e "\n --->" $(date) "\n" 
+echo -e "  Time : \e[1m"$TIME"\e[0m min"
+echo -e "  Size is : \e[1m"$SIZE_VALUE"\e[0m"
+echo -e "  Rss url is : \e[1m"$RSS_URL "\e[0m\n"
+echo "If you want to change some settings, please check $0 -h or $0 --help."
+echo "--"
+if [[ $SHOW_HELP == 1 ]]; then
+	show_Help
+else
+	echo "Processing step 1 : Checking environement..."
+	previous
+	auto
 fi
+rm $RUN
 # clear
 # exit 0
