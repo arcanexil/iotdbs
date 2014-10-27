@@ -1,5 +1,5 @@
 
-iotdbs is the Image of The Day Background Setter.
+##iotdbs is the Image of The Day Background Setter.##
 
 License:     GPL2. See LICENSE.  
 Authors:     Lucas Ranc  
@@ -19,7 +19,8 @@ Optionally:
 
 ## Goals ##
 
-The goal of this project is to:  
+The main goal is very simple. I just want to have an automated script which is putting some amazing pictures on my computer desk. I didn't found any good KISS script that work correctly in bash.  
+The other goal of this project is to:  
 1) provide reasonable clean, DRY, modular and maintainable code  
 2) provide complete, easily-reusable management, etc  
 3) provide some sensible default methods  
@@ -49,7 +50,12 @@ If you want to get in touch with us, to ask/discuss/.. things, please send to th
 
 You would usually invoke iotdbs like this:  
 iotdbs -s <normal/large> -rss <url> -t <time>  
-Type `iotdbs -h` to see more details.
+ -s,--size= 	Select the size/quality of the pictures. Depends of your connection.  
+ 	'normal' is the default argument  
+ 	'large' is for pictures a bit heavier than 2 Mo  
+ -rss,--rss_url= 	Add your own <RSS url>. Default argument is the NASA's image of the day RSS url  
+ -t,--time=		You can change the time between 2 pictures (they are randomly set as background screen)
+ -h,--help 	Show this message
 
 
 
@@ -73,7 +79,7 @@ You can edit on the cd itself, but given the low resolution of the VM, you'll pr
 and pull from the clone on the cd.
 
 
-## Reporting issues / getting help (IT WILL BE IMPLEMENNTED) ##
+## Reporting issues / getting help (already not implemented) ##
 
 Run the iotdbs-report-issues.sh script, which will submit valuable (for debugging)
 info to a public pastebin, you can then give the url to the people who need to help you
