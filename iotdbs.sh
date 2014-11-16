@@ -36,16 +36,15 @@
 #####################
 iotdbs(){
 	echo "Processing step 2 : Looking for new content..."
-		wget -q $RSS_URL
+		wget -q $RSS_URL --no-cache -nc
 		i=0
-		while [[ ! $(head -1 ./$RSS | grep xml | wc -l)  ]] && [ $i -lt 10 ]; do
-			rm ./$RSS
+		while [ $(head -1 ./$RSS | grep xml | wc -l) -eq 0 ] && [ $i -lt 10 ]; do
+			# rm ./$RSS
 			sleep 1
-			wget -q $RSS_URL
+			wget -q $RSS_URL --no-cache -nc
 			let i=i+1
-			echo $i 
+			echo "Trying to get image's list. Script retry " $i " " $(head -1 ./$RSS | grep xml | wc -l)
 		done
-
 		if [[ $(cat ./$RSS | grep xml | wc -l) ]]; then
 			$(cat ./$RSS | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head > img.list)
 
@@ -55,16 +54,16 @@ iotdbs(){
 			while read line  # If pictures already exists, don't need to waste the bandwidth
 			do   
 			   if [[ $((ls $HOME/.wallpaper/$(basename $line) | wc -l) 2>/dev/null) ]]; then 
-			   		echo "I already have the picture $(basename $line)"
+			   		echo "  I already have the picture $(basename $line)"
 			   	else
 			   		# echo "i don't have this one"
-			   		echo "Downloading : $(basename $line)"
+			   		echo "  Downloading : $(basename $line)"
 			   		wget -q $line -P $HOME/.wallpapers
 			   	fi  
 			done < img.list
 
-			 rm ./$RSS
-			 rm img.list
+			rm ./$RSS
+			rm img.list
 			if [ $(ls -A $HOME/.wallpapers/ | wc -l ) -gt 1 ]; then
 				feh --bg-scale --randomize $HOME/.wallpapers/
 				echo "Done step 2"
@@ -173,7 +172,7 @@ $(mkdir -p $FOLDER)
 if [[ ! -e $RUN ]]
 	then # Ok, The script isn't currently running
 		RUN_CHECKED=1
-		echo "running" > $RUN
+		#echo "running" > $RUN
 		echo "#################################################" > $LOG
 		echo -e "\n --->" $(date) "\n" "\e[32;1mLaunching the script ...\e[0m" >> $LOG
 		echo -e "\n --->" $(date) "\n" "time is : \e[1m" $TIME "\e[0m, size is : \e[1m" $SIZE_VALUE "\e[0mand rss_url is : \e[1m" $RSS_URL "\e[0m" >> $LOG
@@ -247,7 +246,7 @@ if [[ $SHOW_HELP == 1 ]]; then
 else
 	echo -n "Processing step 1 : Checking environement..."
 	previous
-	auto
+	# auto
 fi
 rm $RUN
 # clear
