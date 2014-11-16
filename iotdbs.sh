@@ -39,11 +39,14 @@ iotdbs(){
 		wget -q $RSS_URL --no-cache -nc
 		i=0
 		while [ $(head -1 ./$RSS | grep xml | wc -l) -eq 0 ] && [ $i -lt 10 ]; do
-			# rm ./$RSS
+			rm ./$RSS 2>/dev/null
 			sleep 1
 			wget -q $RSS_URL --no-cache -nc
 			let i=i+1
-			echo "Trying to get image's list. Script retry " $i " " $(head -1 ./$RSS | grep xml | wc -l)
+			echo "  Trying to get image's list. Script retry " $i " " $(head -1 ./$RSS | grep xml | wc -l)
+			if [ $i -eq 10 ]; then
+				echo -e "\e[41;1mThe script tried 10 times, something is wrong. Please retry or contact the contributors.\e[0m"
+			fi
 		done
 		if [[ $(cat ./$RSS | grep xml | wc -l) ]]; then
 			$(cat ./$RSS | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head > img.list)
@@ -53,12 +56,12 @@ iotdbs(){
 
 			while read line  # If pictures already exists, don't need to waste the bandwidth
 			do   
-			   if [[ $((ls $HOME/.wallpaper/$(basename $line) | wc -l) 2>/dev/null) ]]; then 
+			   if [[ $((ls $HOME/.wallpapers/$(basename $line) | wc -l) 2>/dev/null) ]]; then 
 			   		echo "  I already have the picture $(basename $line)"
 			   	else
 			   		# echo "i don't have this one"
 			   		echo "  Downloading : $(basename $line)"
-			   		wget -q $line -P $HOME/.wallpapers
+			   		wget -q $line -P $HOME/.wallpapers -nc
 			   	fi  
 			done < img.list
 
@@ -84,6 +87,7 @@ iotdbs(){
 #############
 auto(){
 	counter=0
+	bg
 	while [ $(ls -A $HOME/.wallpapers/ | wc -l ) -gt 1 ]; do
 		sleep "$TIME"m
 		feh --bg-scale --randomize $HOME/.wallpapers/
@@ -246,7 +250,7 @@ if [[ $SHOW_HELP == 1 ]]; then
 else
 	echo -n "Processing step 1 : Checking environement..."
 	previous
-	# auto
+	auto
 fi
 rm $RUN
 # clear
