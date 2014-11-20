@@ -56,7 +56,7 @@ iotdbs(){
 
 			while read line  # If pictures already exists, don't need to waste the bandwidth
 			do   
-			   if [[ $((ls $HOME/.wallpapers/$(basename $line) | wc -l) 2>/dev/null) ]]; then 
+			   if [[ $((ls $HOME/.wallpapers/$(basename $line)) | wc -l) 2>/dev/null) ]]; then 
 			   		echo "  I already have the picture $(basename $line)"
 			   	else
 			   		# echo "i don't have this one"
@@ -109,10 +109,12 @@ value=
 for arguments in "$@"
 do
   case "${prefix}${arguments}" in
-    -s=*|--size=*)  key="-s";     value="${arguments#*=}";; 
+    -s=*|--size=*)  key="-s";     value="${arguments#*=}";;
     -rss=*|--rss_url=*)      key="-rss";    value="${arguments#*=}";;
     -t=*|--time=*)    key="-t";     value="${arguments#*=}";;
-	-h|--help) key="-h";;
+    -h|--help) key="-h";;
+    -a|--auto) key="-a";;
+    -o=*|--output=*) key="-o"	value="${arguments#*=}";;
     *)   value=$arguments;;
   esac
   case $key in
@@ -124,7 +126,9 @@ do
     prefix=""; key="";SIZE_VALUE="${value}" ;;
     -rss) RSS_URL="${value}";          prefix=""; key="";;
     -t)  TIME="${value}";           prefix=""; key="";;
-	-h)  SHOW_HELP=1;           prefix=""; key="";;
+    -h)  SHOW_HELP=1;           prefix=""; key="";;
+    -a)  AUTO="on";           prefix=""; key="";;
+    -o)  OUTPUT="${value}";           prefix=""; key="";;
     *)   prefix="${arguments}=";;
   esac
 done 
@@ -142,6 +146,12 @@ fi
 if [[ -z "$TIME" ]]
 	then
 		TIME=30
+fi
+if [[ -z "$OUTPUT" ]];then
+	OUTPUT=$HOME/.wallpapers/
+fi
+if [[ -z "$AUTO" ]];then
+	AUTO="off"
 fi
 # User asking for help
 show_Help(){
@@ -230,19 +240,15 @@ fi
 ######################################
 # Load each steps in the right order #
 ######################################
-# if [[ ! $SHOW_HELP == 1 ]]
-# 	then
-# 		echo "Processing step 1 : Checking environement..."
-# 		previous
-# 		auto
-# fi
 echo "--"
 echo "In order to apply what you want."
 echo "The script has taken the followings arguments :"
-echo -e "\n --->" $(date) "\n" 
+echo -e "\n --->" $(date) "\n"
 echo -e "  Time : \e[1m"$TIME"\e[0m min"
 echo -e "  Size is : \e[1m"$SIZE_VALUE"\e[0m"
-echo -e "  Rss url is : \e[1m"$RSS_URL "\e[0m\n"
+echo -e "  Rss url is : \e[1m"$RSS_URL "\e[0m"
+echo -e "  Mode auto is : \e[1m"$AUTO "\e[0m"
+echo -e "  Output is : \e[1m"$OUTPUT "\e[0m\n"
 echo "If you want to change some settings, please check $0 -h or $0 --help."
 echo -e "--\n"
 if [[ $SHOW_HELP == 1 ]]; then
@@ -250,8 +256,11 @@ if [[ $SHOW_HELP == 1 ]]; then
 else
 	echo -n "Processing step 1 : Checking environement..."
 	previous
-	auto
+	if [[ "$AUTO" == "on" ]]; then
+		echo "The mode automatic is launched. The script will set a new background every $TIME"
+		auto
+	fi
 fi
-rm $RUN
+#rm $RUN
 # clear
 # exit 0
