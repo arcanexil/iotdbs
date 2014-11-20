@@ -240,7 +240,6 @@ fi
 ######################################
 # Load each steps in the right order #
 ######################################
-<<<<<<< HEAD
 
 if [[ $SHOW_HELP == 1 ]]; then
 	show_Help
@@ -283,6 +282,5 @@ else
 	fi
 fi
 #rm $RUN
->>>>>>> develop
 # clear
 # exit 0
