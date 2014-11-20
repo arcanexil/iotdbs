@@ -240,26 +240,6 @@ fi
 ######################################
 # Load each steps in the right order #
 ######################################
-
-if [[ $SHOW_HELP == 1 ]]; then
-	show_Help
-else
-	echo "--"
-	echo "In order to apply what you want."
-	echo "The script has taken the followings arguments :"
-	echo -e "\n --->" $(date) "\n" 
-	echo -e "  Time : \e[1m"$TIME"\e[0m min"
-	echo -e "  Size is : \e[1m"$SIZE_VALUE"\e[0m"
-	echo -e "  Rss url is : \e[1m"$RSS_URL "\e[0m\n"
-	echo "If you want to change some settings, please check $0 -h or $0 --help."
-	echo "--"
-	echo "Processing step 1 : Checking environement..."
-	previous
-	auto
-	rm $RUN
-fi
-
-=======
 echo "--"
 echo "In order to apply what you want."
 echo "The script has taken the followings arguments :"
