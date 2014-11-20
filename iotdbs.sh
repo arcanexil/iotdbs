@@ -19,6 +19,8 @@
 #
 
 # Changelog :
+# 2014-11-15  arcanexil  <lucas.ranc@gmail.com>
+#  * Changed the way to get the pictures
 #
 # 2014-10-19  arcanexil  <lucas.ranc@gmail.com>
 #
@@ -33,35 +35,41 @@
 # The script itself #
 #####################
 iotdbs(){
-	echo "Processing step 2 : Get the content..."
-		wget -q $RSS_URL
+	echo "Processing step 2 : Looking for new content..."
+		wget -q $RSS_URL --no-cache -nc
 		i=0
-		while [[ ! $(head -1 ./$RSS | grep xml | wc -l)  ]] && [ $i -lt 10 ]; do
-			rm ./$RSS
+		while [ $(head -1 ./$RSS | grep xml | wc -l) -eq 0 ] && [ $i -lt 10 ]; do
+			rm ./$RSS 2>/dev/null
 			sleep 1
-			wget -q $RSS_URL
+			wget -q $RSS_URL --no-cache -nc
 			let i=i+1
-			echo $i 
+			echo "  Trying to get image's list. Script retry " $i " " $(head -1 ./$RSS | grep xml | wc -l)
+			if [ $i -eq 10 ]; then
+				echo -e "\e[41;1mThe script tried 10 times, something is wrong. Please retry or contact the contributors.\e[0m"
+			fi
 		done
-
 		if [[ $(cat ./$RSS | grep xml | wc -l) ]]; then
 			$(cat ./$RSS | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head > img.list)
 
-			# If pictures already exists, don't need to waste the bandwidth
-			if [ $(ls -A $HOME/.wallpapers/ | wc -l) -lt 1 ]; then
-				wget -q -i img.list -P $HOME/.wallpapers
-			else
-				rm $HOME/.wallpapers/{*.jpg.*,*.jpeg.*}
-			fi
 			# The directory already exists ?
 			mkdir -p $HOME/.wallpapers
+
+			while read line  # If pictures already exists, don't need to waste the bandwidth
+			do   
+			   if [[ $((ls $HOME/.wallpapers/$(basename $line)) | wc -l) 2>/dev/null) ]]; then 
+			   		echo "  I already have the picture $(basename $line)"
+			   	else
+			   		# echo "i don't have this one"
+			   		echo "  Downloading : $(basename $line)"
+			   		wget -q $line -P $HOME/.wallpapers -nc
+			   	fi  
+			done < img.list
 
 			rm ./$RSS
 			rm img.list
 			if [ $(ls -A $HOME/.wallpapers/ | wc -l ) -gt 1 ]; then
 				feh --bg-scale --randomize $HOME/.wallpapers/
 				echo "Done step 2"
-				rm $RUN
 			else
 				echo "Step 2 failed. Can't find any pictures in the $HOME/.wallpapers/ folder."
 			fi
@@ -79,6 +87,7 @@ iotdbs(){
 #############
 auto(){
 	counter=0
+	bg
 	while [ $(ls -A $HOME/.wallpapers/ | wc -l ) -gt 1 ]; do
 		sleep "$TIME"m
 		feh --bg-scale --randomize $HOME/.wallpapers/
@@ -100,10 +109,12 @@ value=
 for arguments in "$@"
 do
   case "${prefix}${arguments}" in
-    -s=*|--size=*)  key="-s";     value="${arguments#*=}";; 
+    -s=*|--size=*)  key="-s";     value="${arguments#*=}";;
     -rss=*|--rss_url=*)      key="-rss";    value="${arguments#*=}";;
     -t=*|--time=*)    key="-t";     value="${arguments#*=}";;
-	-h|--help) key="-h";;
+    -h|--help) key="-h";;
+    -a|--auto) key="-a";;
+    -o=*|--output=*) key="-o"	value="${arguments#*=}";;
     *)   value=$arguments;;
   esac
   case $key in
@@ -115,7 +126,9 @@ do
     prefix=""; key="";SIZE_VALUE="${value}" ;;
     -rss) RSS_URL="${value}";          prefix=""; key="";;
     -t)  TIME="${value}";           prefix=""; key="";;
-	-h)  SHOW_HELP=1;           prefix=""; key="";;
+    -h)  SHOW_HELP=1;           prefix=""; key="";;
+    -a)  AUTO="on";           prefix=""; key="";;
+    -o)  OUTPUT="${value}";           prefix=""; key="";;
     *)   prefix="${arguments}=";;
   esac
 done 
@@ -133,6 +146,12 @@ fi
 if [[ -z "$TIME" ]]
 	then
 		TIME=30
+fi
+if [[ -z "$OUTPUT" ]];then
+	OUTPUT=$HOME/.wallpapers/
+fi
+if [[ -z "$AUTO" ]];then
+	AUTO="off"
 fi
 # User asking for help
 show_Help(){
@@ -153,8 +172,7 @@ previous(){
 # We need some variables (it's optional but faster to write for me )
 FOLDER=$HOME/.iotdbs
 LOG=$HOME/.iotdbs/script.log
-RUN=$HOME/.iotdbs/script-running
-# ECHO=$(echo -e "\n --->" $(date) "\n") ------------------- -> TODO : find why it's not working
+RUN=$HOME/.iotdbs/script_running.log
 RUN_CHECKED=
 DISPLAY_CHECKED=
 NETWORK_ALIVE=
@@ -168,7 +186,7 @@ $(mkdir -p $FOLDER)
 if [[ ! -e $RUN ]]
 	then # Ok, The script isn't currently running
 		RUN_CHECKED=1
-		echo > $RUN
+		#echo "running" > $RUN
 		echo "#################################################" > $LOG
 		echo -e "\n --->" $(date) "\n" "\e[32;1mLaunching the script ...\e[0m" >> $LOG
 		echo -e "\n --->" $(date) "\n" "time is : \e[1m" $TIME "\e[0m, size is : \e[1m" $SIZE_VALUE "\e[0mand rss_url is : \e[1m" $RSS_URL "\e[0m" >> $LOG
@@ -192,7 +210,6 @@ fi
 if [[ $NETWORK_ALIVE == "" ]]
 	then
     	NETWORK_ALIVE=$(ping -c1 google.com 2>&1 | grep unknown)
-    	$(sleep 1)
 fi
 
 if [[ "$NETWORK_ALIVE" == ""  ]] # If the process succeed all the steps, the script can start
@@ -200,11 +217,11 @@ if [[ "$NETWORK_ALIVE" == ""  ]] # If the process succeed all the steps, the scr
 		echo -e "\n --->" $(date) "\n" "\e[32;1mNetwork connection looks good\e[0m" >> $LOG
 		echo "#################################################" >> $LOG
 		NETWORK_CHECKED=1
-	    echo "Done step 1"
 	    if [[ $RUN_CHECKED == 1 && $DISPLAY_CHECKED == 1 && $NETWORK_CHECKED == 1 ]]; then
+	    	echo "Done step 1"
 			iotdbs
 		else
-			echo -e "\e[41;1Step 1 Failed\e[0m"
+			echo -e "\e[41;1m Step 1 Failed\e[0m"
 		fi
 	else
 		NETWORK_CHECKED=0
@@ -223,6 +240,7 @@ fi
 ######################################
 # Load each steps in the right order #
 ######################################
+<<<<<<< HEAD
 
 if [[ $SHOW_HELP == 1 ]]; then
 	show_Help
@@ -242,5 +260,29 @@ else
 	rm $RUN
 fi
 
+=======
+echo "--"
+echo "In order to apply what you want."
+echo "The script has taken the followings arguments :"
+echo -e "\n --->" $(date) "\n"
+echo -e "  Time : \e[1m"$TIME"\e[0m min"
+echo -e "  Size is : \e[1m"$SIZE_VALUE"\e[0m"
+echo -e "  Rss url is : \e[1m"$RSS_URL "\e[0m"
+echo -e "  Mode auto is : \e[1m"$AUTO "\e[0m"
+echo -e "  Output is : \e[1m"$OUTPUT "\e[0m\n"
+echo "If you want to change some settings, please check $0 -h or $0 --help."
+echo -e "--\n"
+if [[ $SHOW_HELP == 1 ]]; then
+	show_Help
+else
+	echo -n "Processing step 1 : Checking environement..."
+	previous
+	if [[ "$AUTO" == "on" ]]; then
+		echo "The mode automatic is launched. The script will set a new background every $TIME"
+		auto
+	fi
+fi
+#rm $RUN
+>>>>>>> develop
 # clear
 # exit 0
