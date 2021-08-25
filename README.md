@@ -1,5 +1,5 @@
 
-##iotdbs is the Image of The Day Background Setter.##
+# iotdbs is the Image of The Day Background Setter.
 
 License:     GPL2. See LICENSE.  
 Authors:     Lucas Ranc  
